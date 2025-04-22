@@ -1,0 +1,73 @@
+'use client';
+
+import { useState } from 'react';
+import PostInputForm from '../components/PostInputForm';
+import FormatSelector from '../components/FormatSelector';
+import OutputPreview from '../components/OutputPreview';
+
+export default function Home() {
+  const [postContent, setPostContent] = useState('');
+  const [selectedFormat, setSelectedFormat] = useState('');
+  const [convertedContent, setConvertedContent] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleContentChange = (content: string) => {
+    setPostContent(content);
+  };
+
+  const handleFormatSelect = (format: string) => {
+    setSelectedFormat(format);
+  };
+
+  const handleConvert = async () => {
+    if (!postContent || !selectedFormat) return;
+    setIsLoading(true);
+    
+    try {
+      const response = await fetch('/api/convert', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content: postContent,
+          format: selectedFormat,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Conversion failed');
+      }
+
+      const data = await response.json();
+      setConvertedContent(data.result);
+    } catch (error) {
+      console.error('Error converting content:', error);
+      setConvertedContent('Error converting content. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <main className="min-h-screen p-8 bg-gray-50">
+      <div className="max-w-4xl mx-auto space-y-6">
+        <h1 className="text-3xl font-bold text-center">Substack to Social Media Converter</h1>
+        <PostInputForm onContentChange={handleContentChange} />
+        <FormatSelector onFormatSelect={handleFormatSelect} />
+        <button
+          className="w-full p-4 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400"
+          onClick={handleConvert}
+          disabled={!postContent || !selectedFormat || isLoading}
+        >
+          {isLoading ? 'Converting...' : 'Convert Content'}
+        </button>
+
+        {/* ✅ This shows the output */}
+        {convertedContent && (
+          <OutputPreview content={convertedContent} />
+        )}
+      </div>
+    </main>
+  );
+} 
